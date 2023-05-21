@@ -20,10 +20,19 @@ for param in model.parameters():
     param.requires_grad = False
 
 # %%
-image = Image.open(
-    os.path.join(skimage.data_dir, os.listdir(skimage.data_dir)[0])
-).convert("RGB")
-dummy_input = preprocess(image).unsqueeze(0)
+image_folder = "imagenet-sample-images"
+with open("imagelist.txt", "w") as image_paths:
+    for image in os.listdir(image_folder):
+        if image.endswith(".JPEG"):
+            image_paths.write(f"{image_folder}/{image}\n")
+
+# %%
+batch_size = 1
+with open("imagelist.txt", "r") as image_paths:
+    images = image_paths.read().splitlines()[:batch_size]
+
+images = [Image.open(image).convert("RGB") for image in images]
+dummy_input = torch.cat([preprocess(image).unsqueeze(0) for image in images], dim=0)
 
 
 # %%
@@ -42,7 +51,7 @@ image_encoder = ImageEncoderWrapper(model.encode_image)
 image_encoder.eval()
 
 # %%
-image_encoder(dummy_input);
+print(image_encoder(dummy_input).shape)
 # works
 
 # %%
