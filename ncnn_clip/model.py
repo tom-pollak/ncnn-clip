@@ -1,11 +1,10 @@
 from __future__ import annotations
 from pathlib import Path
 
-import fastai.vision.all as fv
 import numpy as np
 import ncnn
 
-MODEL_ROOT = fv.Path(__file__).parents[1] / "models/ncnn/"
+MODEL_ROOT = Path(__file__).parent.parent / "models/convnext/ncnn/"
 
 
 class NcnnCLIPModel:
@@ -15,16 +14,17 @@ class NcnnCLIPModel:
         bin_path: Path,
         dtype,
     ):
-        assert (
-            Path(param_path).exists() and Path(bin_path).exists()
-        ), "param or bin file does not exist"
+        self.net = ncnn.Net()  # type: ignore
         self.dtype = dtype
         self.embed_dim = 640
         self.image_size = 256
 
-        self.net = ncnn.Net()  # type: ignore
-        self.net.load_param(param_path)
-        self.net.load_model(bin_path)
+        assert (
+            Path(param_path).exists() and Path(bin_path).exists()
+        ), "param or bin file does not exist"
+
+        self.net.load_param(str(param_path))
+        self.net.load_model(str(bin_path))
 
         self.net.opt.lightmode = True
         self.net.opt.use_packing_layout = True
@@ -40,19 +40,23 @@ class NcnnCLIPModel:
 
         self.net.opt.use_image_storage = True
 
+    def image_forward(self, im: np.ndarray) -> np.ndarray:
+        with self.net.create_extractor() as ex:
+            ex.input("in0", ncnn.Mat(im))  # type: ignore
+            _, out0 = ex.extract("out0")
+        return out0
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         assert x.shape[1:] == (
             3,
             self.image_size,
             self.image_size,
-        ), f"input shape must be (B, 3, {self.image_size}, {self.image_size})"
+        ), f"input shape must be (B, 3, {self.image_size}, {self.image_size}), given: {x.shape}"
         out = np.empty((x.shape[0], self.embed_dim), dtype=self.dtype)
         for i, im in enumerate(x):
-            with self.net.create_extractor() as ex:
-                ex.input("in0", ncnn.Mat(im))  # type: ignore
-                _, out0 = ex.extract("out0")
-                out[i] = out0
+            out[i] = self.image_forward(im)
         return out
+        # return np.apply_along_axis(self.image_forward, 0, x)
 
     def __call__(self, x):
         return self.forward(x)
@@ -68,20 +72,20 @@ class NcnnCLIPModel:
         match dtype:
             case np.float32:
                 return NcnnCLIPModel(
-                    MODEL_ROOT / "clip_convnext.param",
-                    MODEL_ROOT / "clip_convnext.bin",
+                    MODEL_ROOT / "fp32.param",
+                    MODEL_ROOT / "fp32.bin",
                     dtype=dtype,
                 )
             case np.float16:
                 return NcnnCLIPModel(
-                    MODEL_ROOT / "clip_convnext_fp16.param",
-                    MODEL_ROOT / "clip_convnext_fp16.bin",
+                    MODEL_ROOT / "fp16.param",
+                    MODEL_ROOT / "fp16.bin",
                     dtype=dtype,
                 )
             case np.int8:
                 return NcnnCLIPModel(
-                    MODEL_ROOT / "clip_convnext_int8.param",
-                    MODEL_ROOT / "clip_convnext_int8.bin",
+                    MODEL_ROOT / "int8.param",
+                    MODEL_ROOT / "int8.bin",
                     dtype=dtype,
                 )
             case _:

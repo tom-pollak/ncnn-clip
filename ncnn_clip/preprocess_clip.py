@@ -1,3 +1,4 @@
+from typing import Callable
 import PIL.Image
 from PIL.Image import Image
 
@@ -6,7 +7,6 @@ from pathlib import Path
 
 import numpy as np
 from torchvision.transforms import CenterCrop, Compose, Resize
-import fastai.vision.all as fv
 
 try:
     from torchvision.transforms import InterpolationMode
@@ -22,12 +22,23 @@ def _convert_to_rgb(image: Image) -> Image:
     return image.convert("RGB")
 
 
+def _to_ndarray(img: Image) -> np.ndarray:
+    norm_img = np.asarray(img).astype(np.float32) / 255
+    return norm_img.transpose(2, 0, 1)
+
+
+def _normalize_transform(mean, std) -> Callable[[np.ndarray], np.ndarray]:
+    mean = np.array(mean)[:, None, None]
+    std = np.array(std)[:, None, None]
+
+    def norm(image):
+        return (image - mean) / std
+
+    return norm
+
+
 def _new_axis(a):
     return np.expand_dims(a, axis=0)
-
-
-def _normalize_transform(mean, std):
-    return lambda image: (image - mean) / std
 
 
 def _preprocess_image(image: Image, image_size) -> np.ndarray:
@@ -36,12 +47,12 @@ def _preprocess_image(image: Image, image_size) -> np.ndarray:
             Resize(image_size, interpolation=BICUBIC),  # type: ignore
             CenterCrop(size=(image_size, image_size)),
             _convert_to_rgb,
-            np.array,
-            _new_axis,
+            _to_ndarray,
             _normalize_transform(
                 (0.48145466, 0.4578275, 0.40821073),
                 (0.26862954, 0.26130258, 0.27577711),
             ),
+            _new_axis,
         ]
     )(image)
 
@@ -54,15 +65,15 @@ def preprocess(items: list[Image] | list[Path], image_size=256) -> np.ndarray:
     if len(item_types) != 1:
         raise ValueError("All items must be either PIL.Image.Image or pathlib.Path.")
     t = item_types.pop()
-    images: list[Image]
-    match t:
-        case pathlib.Path | pathlib.PosixPath | pathlib.WindowsPath:
-            images = [PIL.Image.open(path) for path in items]  # type: ignore
-        case PIL.Image.Image | fv.PILImage:
-            images = items  # type: ignore
-        case _:
-            raise ValueError(f"t is of an Unexpected type {repr(t)}")
 
+    if issubclass(t, pathlib.Path):
+        images = [PIL.Image.open(path) for path in items]  # type: ignore
+    elif issubclass(t, PIL.Image.Image):
+        images = items  # type: ignore
+    else:
+        raise ValueError(f"t is of an Unexpected type {repr(t)}")
+
+    images: list[Image]
     return np.concatenate(
         [_preprocess_image(image, image_size) for image in images], axis=0
     )

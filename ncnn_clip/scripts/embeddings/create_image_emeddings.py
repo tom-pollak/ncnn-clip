@@ -1,15 +1,16 @@
 # %%
+from pathlib import Path
+
 from ncnn_clip import dummy_inputs, NcnnCLIPModel
 from ncnn_clip.open_clip import load_open_clip_model
-import fastai.vision.all as fv
 import torch
 import numpy as np
 
 MODEL_ARCH = "convnext"
-TORCH_OUT = fv.Path("assets/torch_image_features.pt")
-FP32_OUT = fv.Path("assets/fp32_image_features.npy")
-FP16_OUT = fv.Path("assets/fp16_image_features.npy")
-INT8_OUT = fv.Path("assets/int8_image_features.npy")
+TORCH_OUT = Path("assets/torch_image_features.pt")
+FP32_OUT = Path("assets/fp32_image_features.npy")
+FP16_OUT = Path("assets/fp16_image_features.npy")
+INT8_OUT = Path("assets/int8_image_features.npy")
 
 # %%
 images = dummy_inputs.get_processed_images(100)

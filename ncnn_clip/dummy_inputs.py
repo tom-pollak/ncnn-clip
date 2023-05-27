@@ -1,22 +1,31 @@
-import fastai.vision.all as fv
+from pathlib import Path
+import PIL.Image
 
 import numpy as np
-
 from ncnn_clip.preprocess_clip import preprocess
 
-IMAGE_FOLDER = fv.Path(__file__).parents[1] / "imagenet-sample-images"
+IMAGE_FOLDER = Path(__file__).parent.parent / "imagenet-sample-images"
+
+
+def get_image_files(image_folder: Path) -> list[Path]:
+    assert (
+        image_folder.exists() and image_folder.is_dir()
+    ), f"{image_folder} is not a directory"
+    return list(image_folder.glob("**/*.JPEG"))
+
 
 def get_image_fps(nimages: int):
-    return fv.get_image_files(IMAGE_FOLDER)[:nimages]
+    return get_image_files(IMAGE_FOLDER)[:nimages]
 
 
-def get_images(nimages: int):
-    return fv.get_image_files(IMAGE_FOLDER)[:nimages].map(fv.PILImage.create)
+def get_images(nimages: int) -> list[PIL.Image.Image]:
+    dummy_fps = get_image_fps(nimages)
+    return list(map(PIL.Image.open, dummy_fps))
 
 
-def get_random_images(nimages: int) -> list[fv.Image.Image]:
-    dummy_input_np = np.random.randn(nimages, 3, 256, 256).astype(np.float32)
-    return [fv.Image.fromarray(image, mode="RGB") for image in dummy_input_np]
+def get_random_images(nimages: int) -> list[PIL.Image.Image]:
+    dummy_input_np = np.random.randn(nimages, 256, 256, 3).astype(np.float32)
+    return [PIL.Image.fromarray(image, mode="RGB") for image in dummy_input_np]
 
 
 def get_processed_images(nimages: int) -> np.ndarray:
