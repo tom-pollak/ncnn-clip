@@ -1,7 +1,8 @@
 # %%
-import open_clip
 import torch
 import os
+
+from ncnn_clip.open_clip import load_open_clip_model, load_open_clip_tokenizer
 
 # %%
 image_folder = "imagenet-sample-images"
@@ -12,12 +13,8 @@ image_classes = [
 ]
 
 # %%
-model, _, _ = open_clip.create_model_and_transforms(
-    "hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg"
-)
-tokenizer = open_clip.get_tokenizer(
-    "hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg"
-)
+model = load_open_clip_model("convnext")
+tokenizer = load_open_clip_tokenizer("convnext")
 
 # %%
 label_prefix = "a photo of "

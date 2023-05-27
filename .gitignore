@@ -4,4 +4,5 @@ __pycache__/
 .envrc
 *.dat
 models/
-imagenet-sample-images/
+*.bak
+assets/

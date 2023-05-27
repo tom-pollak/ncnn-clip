@@ -1,0 +1,3 @@
+[submodule "imagenet-sample-images"]
+	path = imagenet-sample-images
+	url = git@github.com:nihui/imagenet-sample-images.git

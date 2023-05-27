@@ -1,2 +1,3 @@
-from .utils import preprocess, load_image_model
 from .model import NcnnCLIPModel
+from .preprocess_clip import preprocess
+from .open_clip import load_open_clip_model, load_open_clip_tokenizer
