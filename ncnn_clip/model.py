@@ -1,10 +1,12 @@
 from __future__ import annotations
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import ncnn
+from numpy.typing import DTypeLike
 
-MODEL_ROOT = Path(__file__).parent.parent / "models/convnext/ncnn/"
+MODEL_ROOT = Path(__file__).parent.parent / "models"
 
 
 class NcnnCLIPModel:
@@ -20,7 +22,7 @@ class NcnnCLIPModel:
         self.image_size = 256
 
         assert (
-            Path(param_path).exists() and Path(bin_path).exists()
+            param_path.exists() and bin_path.exists()
         ), "param or bin file does not exist"
 
         self.net.load_param(str(param_path))
@@ -68,28 +70,31 @@ class NcnnCLIPModel:
         return f"{self.__class__.__name__}()"
 
     @staticmethod
-    def load_model(dtype) -> NcnnCLIPModel:
+    def load_model(
+        model: Literal["convnext", "vit"],
+        dtype: DTypeLike,
+        device: Literal["cpu", "gpu"],
+    ) -> NcnnCLIPModel:
+        dtype = np.dtype(dtype)
+        model_path = MODEL_ROOT / device / model
+        assert model_path.exists(), f"{model_path} does not exist"
         match dtype:
             case np.float32:
-                return NcnnCLIPModel(
-                    MODEL_ROOT / "fp32.param",
-                    MODEL_ROOT / "fp32.bin",
-                    dtype=dtype,
-                )
+                dtype_str = "fp32"
             case np.float16:
-                return NcnnCLIPModel(
-                    MODEL_ROOT / "fp16.param",
-                    MODEL_ROOT / "fp16.bin",
-                    dtype=dtype,
-                )
+                dtype_str = "fp16"
             case np.int8:
-                return NcnnCLIPModel(
-                    MODEL_ROOT / "int8.param",
-                    MODEL_ROOT / "int8.bin",
-                    dtype=dtype,
-                )
+                dtype_str = "int8"
             case _:
-                raise ValueError(f"unsupported dtype: {dtype}")
+                raise ValueError(
+                    f"unsupported dtype: {dtype}. Supported dtypes: fp32, fp16, int8"
+                )
+
+        return NcnnCLIPModel(
+            param_path=model_path / f"{dtype_str}.param",
+            bin_path=model_path / f"{dtype_str}.bin",
+            dtype=dtype,
+        )
 
 
 # >>> import ncnn.model_zoo as model_zoo

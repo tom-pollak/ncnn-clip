@@ -6,8 +6,7 @@ from torch import nn
 from ncnn_clip import dummy_inputs
 from ncnn_clip.open_clip import load_open_clip_model
 
-MODEL_ARC = "convnext"
-TORCHSCRIPT_SAVE_PATH = Path("models/torch/clip_convnext_torchscript.pt")
+TORCHSCRIPT_SAVE_ROOT = Path("models")
 
 
 class ImageEncoderWrapper(nn.Module):
@@ -20,30 +19,37 @@ class ImageEncoderWrapper(nn.Module):
             return self.encode_image_func(input)
 
 
-def export_torchscript(save_script=True) -> torch.ScriptModule:
-    print(f"Starting TorchScript export of {MODEL_ARC} to {TORCHSCRIPT_SAVE_PATH}...")
-
-    model = load_open_clip_model(MODEL_ARC)
+def export_torchscript(model, device, save_script=True) -> torch.ScriptModule:
+    print("Starting TorchScript export...")
 
     for param in model.parameters():
         param.requires_grad = False
+
+    # TODO freeze batch norm?
 
     image_encoder = ImageEncoderWrapper(model.encode_image)
     image_encoder.eval()
 
     batch_size = 1
-    dummy_input = dummy_inputs.get_processed_images(batch_size)
+    dummy_input = torch.tensor(dummy_inputs.get_processed_images(batch_size))
+    dummy_input = dummy_input.to(device)
     print("Sanity check. Dummy output:", image_encoder(dummy_input).shape)  # works
 
     # could this be trace_module?
     mod: torch.ScriptModule = torch.jit.trace(image_encoder, dummy_input)  # type: ignore
 
     if save_script:
-        mod.save(TORCHSCRIPT_SAVE_PATH)  # type: ignore
+        if device != "cpu":
+            device = "gpu"
 
-    print("Done!")
+        save_path = TORCHSCRIPT_SAVE_ROOT / device / "torchscript.pt"
+        assert save_path.parent.exists(), f"save path {save_path.parent} does not exist"
+        mod.save(save_path)  # type: ignore
+        print("Saved TorchScript to", save_path)
+
     return mod
 
 
 if __name__ == "__main__":
-    export_torchscript()
+    model = load_open_clip_model("convnext", device="cpu")
+    export_torchscript(model, "cpu", save_script=True)

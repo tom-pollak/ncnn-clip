@@ -25,14 +25,14 @@ def bench_models():
     model_torch = load_open_clip_model("convnext").encode_image
     _ = run_inference(model_torch, torch.from_numpy(dummy_input).to(torch.float32))
 
-    model_fp32 = NcnnCLIPModel.load_model(np.float32)
+    model_fp32 = NcnnCLIPModel.load_model("convnext", np.float32, "cpu")
     _ = run_inference(model_fp32, dummy_input.astype(np.float32))
 
-    model_fp16 = NcnnCLIPModel.load_model(np.float16)
-    _ = run_inference(model_fp16, dummy_input.astype(np.float16))
+    model_fp16 = NcnnCLIPModel.load_model("convnext", np.float16, "cpu")
+    _ = run_inference(model_fp16, dummy_input.astype(np.float32)) # still takes fp32 input
 
-    model_int8 = NcnnCLIPModel.load_model(np.int8)
-    _ = run_inference(model_int8, dummy_input.astype(np.int8))
+    # model_int8 = NcnnCLIPModel.load_model(np.int8)
+    # _ = run_inference(model_int8, dummy_input.astype(np.int8))
 
 
 if __name__ == "__main__":

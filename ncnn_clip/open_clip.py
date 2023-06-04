@@ -4,12 +4,16 @@ import open_clip
 import torch
 import torchvision
 
-MODELS = {"convnext": "hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg"}
+MODELS = {
+    "convnext": "hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg",
+    "vit": "",
+}
 
 
-def load_open_clip_model(model_name: str) -> open_clip.CLIP:
+def load_open_clip_model(model_name: str, device="cpu") -> open_clip.CLIP:
     model: open_clip.CLIP
     model, _, _ = open_clip.create_model_and_transforms(MODELS[model_name])  # type: ignore
+    model = model.to(device)
     model.eval()
     return model
 

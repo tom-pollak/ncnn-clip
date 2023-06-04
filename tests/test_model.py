@@ -1,4 +1,3 @@
-# %%
 import PIL.Image
 
 import torch

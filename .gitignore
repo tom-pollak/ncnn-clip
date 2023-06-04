@@ -7,3 +7,4 @@ models/
 *.bak
 assets/
 .pytest_cache
+imagenet-sample-images/
