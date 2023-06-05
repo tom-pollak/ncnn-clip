@@ -6,7 +6,9 @@ import torchvision
 
 MODELS = {
     "convnext": "hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg",
-    "vit": "",
+    "vit-b-16": "hf-hub:laion/CLIP-ViT-B-16-laion2B-s34B-b88K",
+    "vit-b-32": "hf-hub:laion/CLIP-ViT-B-32-laion2B-s34B-b79K",
+    "vit-b-32-roberta": "hf-hub:laion/CLIP-ViT-B-32-xlm-roberta-base-laion5B-s13B-b90k",
 }
 
 
