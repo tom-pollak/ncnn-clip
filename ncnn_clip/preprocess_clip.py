@@ -57,10 +57,14 @@ def _preprocess_image(image: Image, image_size) -> np.ndarray:
     )(image)
 
 
-def preprocess(items: list[Image] | list[Path], image_size=256) -> np.ndarray:
+def preprocess(
+    items: list[Image] | list[Path] | np.ndarray, image_size=256
+) -> np.ndarray:
     """
     Preprocesses list of image paths or list of PIL.Image objects.
     """
+    if isinstance(items, np.ndarray):
+        assert items.ndim == 4
     item_types = {type(item) for item in items}
     if len(item_types) != 1:
         raise ValueError("All items must be either PIL.Image.Image or pathlib.Path.")
@@ -68,6 +72,8 @@ def preprocess(items: list[Image] | list[Path], image_size=256) -> np.ndarray:
 
     if issubclass(t, pathlib.Path):
         images = [PIL.Image.open(path) for path in items]  # type: ignore
+    elif issubclass(t, np.ndarray):
+        images = [PIL.Image.fromarray(image) for image in items]
     elif issubclass(t, PIL.Image.Image):
         images = items  # type: ignore
     else:
@@ -76,4 +82,4 @@ def preprocess(items: list[Image] | list[Path], image_size=256) -> np.ndarray:
     images: list[Image]
     return np.concatenate(
         [_preprocess_image(image, image_size) for image in images], axis=0
-    )
+    ).astype(np.float32)

@@ -4,6 +4,8 @@ import open_clip
 import torch
 import torchvision
 
+from ncnn_clip.utils import MODULE_ROOT
+
 MODELS = {
     "convnext": "hf-hub:laion/CLIP-convnext_base_w-laion2B-s13B-b82K-augreg",
     "vit-b-16": "hf-hub:laion/CLIP-ViT-B-16-laion2B-s34B-b88K",
@@ -17,6 +19,11 @@ def load_open_clip_model(model_name: str, device="cpu") -> open_clip.CLIP:
     model, _, _ = open_clip.create_model_and_transforms(MODELS[model_name])  # type: ignore
     model = model.to(device)
     model.eval()
+    return model
+
+
+def load_int8_image_encoder() -> torch.jit.ScriptModule:
+    model = torch.jit.load(MODULE_ROOT / "models/gpu/convnext/int8_torchscript.pt")
     return model
 
 

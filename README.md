@@ -25,6 +25,13 @@ pnnx models/cpu/convnext/torchscript.pt inputshape=[1,3,256,256]f32 fp16=1 devic
 rm debug*
 ```
 
+```bash
+pnnx models/gpu/convnext/int8_torchscript.pt inputshape=[1,3,256,256]int8 fp16=1 device=gpu   \
+  ncnnbin=models/gpu/convnext/int8.bin ncnnparam=models/gpu/convnext/int8.param ncnnpy=/Users/tom/.Trash/ncnn_clip_convnext_int8.py \
+  pnnxbin=/Users/tom/.Trash/pnnx_int8.bin pnnxparam=/Users/tom/.Trash/pnnx_int8.param pnnxpy=/Users/tom/.Trash/pnnx_clip_convnext_int8.py pnnxonnx=/Users/tom/.Trash/int8.onnx && \
+rm debug*
+```
+
 `python test_convnext_ncnn.py`
 
 ## Inputs
@@ -35,4 +42,19 @@ rm debug*
 
 - https://github.com/mlfoundations/open_clip#model-distillation
 - https://github.com/mlfoundations/open_clip#int8-support
+- https://github.com/Tencent/ncnn/wiki/FAQ-ncnn-produce-wrong-result
+- https://github.com/Tencent/ncnn/wiki/quantized-int8-inference
+- https://github.com/Tencent/ncnn/blob/master/docs/how-to-use-and-FAQ/quantized-int8-inference.md
+- https://github.com/Tencent/ncnn/wiki/use-ncnn-with-opencv
+  - How to set mean and norm values
+
 - open_clip.utils.freeze_batch_norm_2d
+- int8_model.set_grad_checkpointing(enable=False)
+
+## ncnn2table
+
+- mean vals \* 255
+- 1 / norm vals / 255
+- mean=[0.48145466, 0.4578275, 0.40821073] norm=[0.26862954, 0.26130258, 0.27577711]
+
+mean=[122.7709383, 116.7460125, 104.09373615000001] norm=[0.014598426619242919, 0.015007768493717055, 0.014220065717024086]
